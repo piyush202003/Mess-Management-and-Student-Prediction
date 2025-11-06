@@ -1,0 +1,147 @@
+{% extends "basep.html" %}
+
+{% block title %}{% if object %}Edit Schedule{% else %}Schedule New Menu{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Container max width */
+    .container-custom {
+        max-width: 700px;
+        margin: 2.5rem auto 3rem auto;
+    }
+    /* Card styling */
+    .card-custom {
+        border-radius: 14px;
+        box-shadow: 0 6px 22px rgba(0,0,0,0.06);
+        padding: 2rem 2.5rem;
+        background: #fff;
+    }
+    /* Scroll container for menu items */
+    .menu-items-container {
+        max-height: 280px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+    }
+    /* Style for checkboxes */
+    .form-check {
+        padding-left: 1.5rem;
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.65rem;
+    }
+    .form-check-input {
+        position: absolute;
+        left: 0;
+        margin-top: 0.3rem;
+    }
+    .form-check-label {
+        margin-bottom: 0;
+        cursor: pointer;
+        font-weight: 500;
+        color: #444;
+    }
+    /* Bootstrap form controls overrides */
+    input.form-control,
+    select.form-select {
+        border-radius: 10px;
+        box-shadow: inset 0 1px 5px rgba(0,0,0,0.07);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    input.form-control:focus,
+    select.form-select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 8px rgba(25,135,84,0.4);
+        outline: none;
+    }
+    /* Buttons styling */
+    .btn-success {
+        border-radius: 30px;
+        font-weight: 700;
+        padding: 0.6rem 1.8rem;
+        letter-spacing: 0.03em;
+        transition: background-color 0.3s ease;
+    }
+    .btn-success:hover {
+        background-color: #146c43;
+    }
+    .btn-secondary {
+        border-radius: 30px;
+        font-weight: 600;
+        padding: 0.6rem 1.8rem;
+    }
+    /* Responsive paddings */
+    @media (max-width: 575.98px) {
+        .card-custom {
+            padding: 1.5rem 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container container-custom">
+    <div class="card card-custom shadow-sm">
+        <h1 class="h3 mb-4 text-center text-success">
+            {% if object %}Edit Menu for {{ object.date|date:"F j, Y" }}{% else %}Schedule a New Menu{% endif %}
+        </h1>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="{{ form.date.id_for_label }}" class="form-label fw-semibold">{{ form.date.label }}</label>
+                {{ form.date }}
+                {{ form.date.errors }}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.meal_type.id_for_label }}" class="form-label fw-semibold">{{ form.meal_type.label }}</label>
+                {{ form.meal_type }}
+                {{ form.meal_type.errors }}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">{{ form.menu_items.label }}</label>
+                <div class="menu-items-container">
+                    {{ form.menu_items }}
+                    {{ form.menu_items.errors }}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3">
+                <a href="{% url 'daily_menu_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-2"></i> Save Schedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Add Bootstrap form-control class to date and select fields
+    const dateField = document.querySelector('#id_date');
+    if(dateField) dateField.classList.add('form-control');
+    const mealTypeField = document.querySelector('#id_meal_type');
+    if(mealTypeField) mealTypeField.classList.add('form-select');
+
+    // Style each menu_items checkbox nicely with Bootstrap form-check classes
+    const menuItems = document.querySelector('#id_menu_items');
+    if(menuItems){
+        menuItems.querySelectorAll('li').forEach(li => {
+            li.classList.add('form-check');
+            const label = li.querySelector('label');
+            const input = label.querySelector('input');
+            input.classList.add('form-check-input');
+            label.classList.add('form-check-label');
+            // Move input out of label to be its sibling for better styling
+            li.insertBefore(input, label);
+        });
+    }
+});
+</script>
+{% endblock %}

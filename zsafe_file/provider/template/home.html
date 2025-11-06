@@ -1,0 +1,172 @@
+
+{% extends "basep.html" %}
+{% block title %}Mess Control Panel{% endblock %}
+{% block extra_css %}
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .btn-success { background-color: #198754; border: none; }
+        .btn-danger { background-color: #dc3545; border: none; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- <h1 class="text-center mb-4">Welcome, {{ request.user.provider_profile.mess_name|default:request.user.username }}!</h1> -->
+    <h3 class="text-center text-muted mb-5">Mess Control Panel</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-header fs-4">
+                    Lunch Control {% if provider_profile.lunch_start %}({{ provider_profile.lunch_start|time:"g:i A" }} - {{ provider_profile.lunch_end|time:"g:i A" }}){% endif %}
+                </div>
+                <div class="card-body">
+                    {% if provider_profile.lunch_start %}
+                        {% if lunch_status.is_active %}
+                            <h5 class="card-title text-success">Mess is currently ACTIVE</h5>
+                            <p class="card-text">Started at: {{ lunch_status.started_at|time:"g:i A" }}</p>
+                            <form action="{% url 'stop_mess' meal_type='lunch' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-lg">Stop Mess Manually</button>
+                            </form>
+                        {% else %}
+                            <h5 class="card-title text-muted">Mess is currently INACTIVE</h5>
+
+                            {% if is_lunch_time_over %}
+                                <p class="card-text">Time to start has passed. This meal has been marked as a holiday.</p>
+                                <button class="btn btn-secondary btn-lg" disabled>Start Lunch Mess</button>
+                            {% elif can_start_lunch %}
+                                <p class="card-text">You can now start the lunch service.</p>
+                                <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#startMessModalLunch">
+                                    Start Lunch Mess
+                                </button>
+                            {% else %}
+                                <p class="card-text">The window to start the mess has not opened yet.</p>
+                                <button class="btn btn-secondary btn-lg" disabled>Start Lunch Mess</button>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <p class="text-warning">Please set your lunch start and end times in your profile to enable this feature.</p>
+                    {% endif %}
+                </div>
+                
+
+                <div class="card-footer text-muted">Today's Date: {% now "F j, Y" %}</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-header fs-4">
+                    Dinner Control {% if provider_profile.dinner_start %}({{ provider_profile.dinner_start|time:"g:i A" }} - {{ provider_profile.dinner_end|time:"g:i A" }}){% endif %}
+                </div>
+                <div class="card-body">
+                     {% if provider_profile.dinner_start %}
+                        {% if dinner_status.is_active %}
+                            <h5 class="card-title text-success">Mess is currently ACTIVE</h5>
+                            <p class="card-text">Started at: {{ dinner_status.started_at|time:"g:i A" }}</p>
+                            <form action="{% url 'stop_mess' meal_type='dinner' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-lg">Stop Mess Manually</button>
+                            </form>
+                        {% else %}
+                            <h5 class="card-title text-muted">Mess is currently INACTIVE</h5>
+                            {% if is_dinner_time_over %}
+                                <p class="card-text">Time to start has passed. This meal has been marked as a holiday.</p>
+                                <button class="btn btn-secondary btn-lg" disabled>Start Dinner Mess</button>
+                            {% elif can_start_dinner %}
+                                <p class="card-text">You can now start the dinner service.</p>
+                                <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#startMessModalDinner">
+                                    Start Dinner Mess
+                                </button>
+                            {% else %}
+                                <p class="card-text">The window to start the mess has not opened yet.</p>
+                                <button class="btn btn-secondary btn-lg" disabled>Start Dinner Mess</button>
+                            {% endif %}
+                        {% endif %}
+                     {% else %}
+                        <p class="text-warning">Please set your dinner start and end times in your profile to enable this feature.</p>
+                     {% endif %}
+                </div>
+
+                <div class="card-footer text-muted">Today's Date: {% now "F j, Y" %}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="startMessModalLunch" tabindex="-1" aria-labelledby="startMessModalLabelLunch" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="startMessModalLabelLunch">Select Today's Lunch Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'start_mess' meal_type='lunch' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Choose the items you are serving for lunch today. This will be sent as a notification.</p>
+                    <ul class="list-group">
+                        {% for item in menu_items %}
+                            <li class="list-group-item">
+                                <input class="form-check-input me-1" type="checkbox" name="menu_items" value="{{ item.id }}" id="lunch_item_{{ item.id }}">
+                                <label class="form-check-label stretched-link" for="lunch_item_{{ item.id }}">{{ item.dish_name }}</label>
+                            </li>
+                        {% empty %}
+                            <p class="text-danger">You have not added any menu items yet. Please add some from your profile.</p>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm and Start Mess</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="startMessModalDinner" tabindex="-1" aria-labelledby="startMessModalLabelDinner" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="startMessModalLabelDinner">Select Today's Dinner Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'start_mess' meal_type='dinner' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Choose the items you are serving for dinner today. This will be sent as a notification.</p>
+                    <ul class="list-group">
+                         {% for item in menu_items %}
+                            <li class="list-group-item">
+                                <input class="form-check-input me-1" type="checkbox" name="menu_items" value="{{ item.id }}" id="dinner_item_{{ item.id }}">
+                                <label class="form-check-label stretched-link" for="dinner_item_{{ item.id }}">{{ item.dish_name }}</label>
+                            </li>
+                        {% empty %}
+                            <p class="text-danger">You have not added any menu items yet.</p>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm and Start Mess</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+

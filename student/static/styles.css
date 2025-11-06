@@ -1,0 +1,112 @@
+
+body {
+    background: #f5f6fa;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    color: #2d3436;
+    margin-top: 40px;
+}
+
+form {
+    background: #fff;
+    max-width: 350px;
+    margin: 4px auto;
+    padding: 30px 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    font-weight: 500;
+    color: #636e72;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="password"] {
+    padding: 8px 10px;
+    border: 1px solid #b2bec3;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: #0984e3;
+}
+
+button[type="submit"] {
+    background: #0984e3;
+    color: #fff;
+    border: none;
+    padding: 10px 0;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+button[type="submit"]:hover {
+    background: #74b9ff;
+}
+
+/* Style for secondary button (Forgot Password?) */
+button[type="button"] {
+    background: #dfe6e9;
+    color: #636e72;
+    border: none;
+    padding: 10px 0;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+button[type="button"]:hover {
+    background: #b2bec3;
+}
+
+p {
+    margin: 0;
+    color: #636e72;
+    font-size: 0.95rem;
+}
+
+a {
+    color: #0984e3;
+    text-decoration: none;
+    font-size: 0.95rem;
+    margin-right: 10px;
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: #636e72;
+}
+
+/* Flex container for links at the bottom of the form */
+form > a,
+form > div {
+    margin-top: 5px;
+}
+
+.fa-arrow-left {
+    margin-right: 5px; /* Fixed typo: was 'margin-rigtht' */
+}
+
+/* Remove extra space from <br> tags if present */
+form br {
+    display: none;
+}

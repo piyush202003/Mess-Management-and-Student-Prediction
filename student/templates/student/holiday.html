@@ -1,0 +1,175 @@
+{% extends "bases.html" %}
+{% load static %}
+{% block title %}Student Holiday{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<style>
+    /* Container padding for better breathing room */
+
+    /* Heading style */
+    h3 {
+        font-weight: 700;
+        color: #0d6efd;
+    }
+
+    /* Form label emphasis */
+    label.form-label {
+        font-weight: 600;
+    }
+
+    /* Disabled select styling */
+    select[disabled] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    /* Responsive table for small devices */
+    @media (max-width: 576px) {
+        table.table {
+            font-size: 0.9rem;
+        }
+
+        .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4 text-center">Set Holiday</h3>
+    <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <!-- Select Plan -->
+        <div class="mb-3">
+            <label for="plan_id" class="form-label">Select Active Plan</label>
+            <select name="plan_id" id="plan_id" class="form-select" required>
+                <option value="" selected disabled>-- Choose Plan --</option>
+                {% for sub in active_subs %}
+                <option value="{{ sub.mess_plan.id }}">{{ sub.mess_plan.plan_name }} ({{ sub.mess_plan.get_meal_type_display }})</option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">Please select a plan.</div>
+        </div>
+
+        <!-- Select Meal Type -->
+        <div class="mb-3">
+            <label for="meal_type" class="form-label">Select Meal Type</label>
+            <select name="meal_type" id="meal_type" class="form-select" required disabled>
+                <option value="">-- Select a plan first --</option>
+            </select>
+            <div class="invalid-feedback">Please select a meal type.</div>
+        </div>
+
+        <!-- Select Dates -->
+        <div class="mb-3">
+            <label for="dates" class="form-label">Select Dates</label>
+            <input type="text" id="dates" name="dates[]" class="form-control" placeholder="Choose multiple dates" required autocomplete="off" />
+            <div class="invalid-feedback">Please select one or more dates.</div>
+        </div>
+
+        <!-- Reason -->
+        <div class="mb-3">
+            <label for="reason" class="form-label">Reason (optional)</label>
+            <textarea name="reason" id="reason" class="form-control" rows="2" placeholder="E.g. Out of station"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Submit Holiday</button>
+    </form>
+
+    <hr>
+
+    <h5 class="mt-4 text-center">Your Existing Holidays</h5>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Meal Type</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in holidays %}
+                <tr>
+                    <td>{{ h.date }}</td>
+                    <td>{{ h.get_meal_type_display }}</td>
+                    <td>{{ h.reason|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No holidays yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Initialize Flatpickr for multiple date selection
+    flatpickr("#dates", {
+        mode: "multiple",
+        dateFormat: "Y-m-d",
+        allowInput: true
+    });
+
+    // Bootstrap form validation
+    (function () {
+        'use strict'
+        const forms = document.querySelectorAll('form')
+
+        Array.from(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })();
+
+    // When a plan is selected, update available meal types
+    $("#plan_id").on("change", function () {
+        const planId = $(this).val();
+        const mealSelect = $("#meal_type");
+
+        if (!planId) {
+            mealSelect.prop("disabled", true).html('<option value="">-- Select a plan first --</option>');
+            return;
+        }
+
+        $.ajax({
+            url: `/student/get_plan_meal_type/${planId}/`,
+            type: "GET",
+            success: function (data) {
+                const planMeal = data.meal_type;
+                mealSelect.empty();
+
+                if (planMeal === "LUNCH") {
+                    mealSelect.append('<option value="LUNCH">Lunch</option>');
+                } else if (planMeal === "DINNER") {
+                    mealSelect.append('<option value="DINNER">Dinner</option>');
+                } else if (planMeal === "BOTH") {
+                    mealSelect.append('<option value="LUNCH">Lunch</option>');
+                    mealSelect.append('<option value="DINNER">Dinner</option>');
+                    mealSelect.append('<option value="BOTH">Lunch & Dinner</option>');
+                }
+
+                mealSelect.prop("disabled", false);
+            },
+            error: function () {
+                mealSelect.prop("disabled", true).html('<option value="">Error loading meal types</option>');
+            }
+        });
+    });
+</script>
+{% endblock %}

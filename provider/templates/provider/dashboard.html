@@ -1,0 +1,226 @@
+{% extends "basep.html" %}
+{% load static %}
+
+{% block title %}Mess Provider Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">📊 Mess Dashboard</h1>
+    <p class="text-muted">Attendance and Subscription Insights for {{ user.username }}</p>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <a href="{% url 'retrain_model' user.id %}" class="btn btn-lg btn-warning w-100">
+                <i class="fas fa-sync-alt"></i><br>
+                <small>Retrain AI Model</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <a href="{% url 'analytics' user.id %}" class="btn btn-lg btn-info w-100">
+                <i class="fas fa-chart-bar"></i><br>
+                <small>AI Analytics</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <a href="{% url 'recommend_dish' user.id %}" class="btn btn-lg btn-success w-100">
+                <i class="fas fa-magic"></i><br>
+                <small>AI Recommend</small>
+            </a>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="h5">Total Active Students</div>
+                    <div class="h3">{{ key_metrics.total_active_students }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="h5">Expected Attendance (Today)</div>
+                    <div class="h3">{{ key_metrics.expected_attendance_today }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12 mb-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="h5">Meals Consumed (Yesterday)</div>
+                    <div class="h3">{{ key_metrics.meals_consumed_yesterday }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-1"></i> Average Daily Attendance Trend
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyAttendanceChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i> Meal-Time Traffic (Average Peak Hours)
+                </div>
+                <div class="card-body">
+                    <canvas id="mealTimeTrafficChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i> Subscription Renewal Forecast
+                </div>
+                <div class="card-body">
+                    <canvas id="couponForecastChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt me-1"></i> Student Leaves (Next 7 Days)
+                </div>
+                <div class="card-body">
+                    <canvas id="leaveImpactChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Parse the JSON data from Django context
+    const dailyTrendData = JSON.parse('{{ daily_trend_data_json|safe }}');
+    const couponForecastData = JSON.parse('{{ coupon_forecast_data_json|safe }}');
+    const leaveImpactData = JSON.parse('{{ leave_impact_data_json|safe }}');
+    const mealTimeData = JSON.parse('{{ meal_time_data_json|safe }}');
+
+    // ===================================
+    // 1. Average Daily Attendance Trend
+    // ===================================
+    new Chart(document.getElementById('dailyAttendanceChart'), {
+        type: 'bar',
+        data: {
+            labels: dailyTrendData.labels,
+            datasets: [
+                {
+                    label: 'Avg. Lunch Attendance',
+                    data: dailyTrendData.lunch_data,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Avg. Dinner Attendance',
+                    data: dailyTrendData.dinner_data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { title: { display: true, text: 'Average Students Present (Last 4 Weeks)' } }
+        }
+    });
+
+    // ===================================
+    // 2. Meal-Time Traffic Chart
+    // ===================================
+    new Chart(document.getElementById('mealTimeTrafficChart'), {
+        type: 'bar',
+        data: {
+            labels: mealTimeData.labels,
+            datasets: [{
+                label: 'Avg. Students Scanned',
+                data: mealTimeData.data,
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { title: { display: true, text: 'Students Scanned by Time Slot (Requires Attendance Marking)' } }
+        }
+    });
+
+    // ===================================
+    // 3. Subscription Renewal Forecast
+    // ===================================
+    new Chart(document.getElementById('couponForecastChart'), {
+        type: 'doughnut',
+        data: {
+            labels: couponForecastData.labels,
+            datasets: [{
+                data: couponForecastData.data,
+                backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Active Subscriptions by Remaining Coupons' },
+                legend: { position: 'right' }
+            }
+        }
+    });
+
+    // ===================================
+    // 4. Student Leave Impact
+    // ===================================
+    new Chart(document.getElementById('leaveImpactChart'), {
+        type: 'line',
+        data: {
+            labels: leaveImpactData.labels,
+            datasets: [{
+                label: 'Students on Leave/Holiday',
+                data: leaveImpactData.leaves,
+                borderColor: 'rgb(153, 102, 255)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Total Leaves' }
+                }
+            },
+            plugins: {
+                title: { display: true, text: 'Forecasted Low Attendance Due to Student Leaves' }
+            }
+        }
+    });
+</script>
+{% endblock %}

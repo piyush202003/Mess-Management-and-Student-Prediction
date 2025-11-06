@@ -1,0 +1,209 @@
+{% extends "basep.html" %}
+{% load static %}
+
+{% block title %}Dish Prediction - {{ provider.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prediction-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .result-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+    }
+    .result-box h2 {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .model-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-brain"></i> Dish Prediction</h2>
+                    <p class="text-muted">Predict attendance for specific dishes</p>
+                </div>
+                <a href="{% url 'retrain_model' provider.id %}" class="btn btn-warning">
+                    <i class="fas fa-sync-alt"></i> Retrain Model
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if not has_model %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No Model Trained Yet</strong>
+        <p class="mb-0">You need to train your model first with at least 20 attendance records.</p>
+        <a href="{% url 'retrain_model' provider.id %}" class="btn btn-sm btn-warning mt-2">
+            Train Model Now
+        </a>
+    </div>
+    {% endif %}
+
+    {% if has_model %}
+    <div class="model-info">
+        <h6><i class="fas fa-info-circle"></i> Current Model Stats</h6>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Average Attendance:</strong> {{ model_stats.avg_attendance|floatformat:1 }} students
+            </div>
+            <div class="col-md-4">
+                <strong>Range:</strong> {{ model_stats.min_attendance }} - {{ model_stats.max_attendance }}
+            </div>
+            <div class="col-md-4">
+                <strong>Training Records:</strong> {{ model_stats.total_samples }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-4 col-md-5">
+            <div class="card prediction-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h"></i> Prediction Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="day" class="form-label">Day of Week</label>
+                            <select name="day" id="day" class="form-select" required>
+                                <option value="">-- Select Day --</option>
+                                {% for d in days %}
+                                    <option value="{{ d }}" {% if d == selected_day %}selected{% endif %}>{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="meal_time" class="form-label">Meal Time</label>
+                            <select name="meal_time" id="meal_time" class="form-select" required>
+                                <option value="">-- Select Meal --</option>
+                                {% for m in meals %}
+                                    <option value="{{ m }}" {% if m == selected_meal_time %}selected{% endif %}>{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="holiday" class="form-label">Holiday</label>
+                            <select name="holiday" id="holiday" class="form-select" required>
+                                <option value="None" {% if selected_holiday == "None" %}selected{% endif %}>None</option>
+                                <option value="Yes" {% if selected_holiday == "Yes" %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dish" class="form-label">Select Dish</label>
+                            <select name="dish" id="dish" class="form-select" required>
+                                <option value="">-- Select Dish --</option>
+                                {% for dish in dishes %}
+                                    <option value="{{ dish }}" {% if dish == selected_dish %}selected{% endif %}>
+                                        {{ dish }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if dishes %}
+                                <small class="text-muted">{{ dishes|length }} dish(es) available</small>
+                            {% else %}
+                                <small class="text-danger">No dishes added yet. Add dishes from menu management.</small>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" {% if not has_model %}disabled{% endif %}>
+                            <i class="fas fa-chart-line"></i> Predict Attendance
+                        </button>
+                        
+                        {% if not has_model %}
+                        <small class="text-muted d-block mt-2">Train your model first to enable predictions</small>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-md-7">
+            {% if prediction_made %}
+            <div class="card prediction-card mb-4">
+                <div class="card-body">
+                    <div class="result-box">
+                        <h5 class="mb-0">Predicted Attendance</h5>
+                        <h2>{{ predicted_attendance }}</h2>
+                        <p class="mb-0">students expected</p>
+                    </div>
+                    
+                    <div class="row mt-4 text-center">
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Dish</small>
+                                <strong>{{ selected_dish }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Day</small>
+                                <strong>{{ selected_day }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Meal</small>
+                                <strong>{{ selected_meal_time }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded">
+                                <small class="text-muted d-block">Holiday</small>
+                                <strong>{{ selected_holiday }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card prediction-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb"></i> How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Your Personalized Prediction Model</h6>
+                    <ul>
+                        <li>This model is trained specifically on <strong>your mess's</strong> attendance data</li>
+                        <li>It learns patterns from your last 60 days of student attendance</li>
+                        <li>Predictions account for day of week, dish type, holidays, and meal time</li>
+                        <li>The more data you have, the more accurate predictions become</li>
+                    </ul>
+                    
+                    <h6 class="mt-4">Tips for Better Predictions:</h6>
+                    <ul>
+                        <li><strong>Track attendance regularly</strong> - More data = better predictions</li>
+                        <li><strong>Retrain periodically</strong> - Update model with latest trends</li>
+                        <li><strong>Add all your dishes</strong> - Model learns preferences for each dish</li>
+                        <li><strong>Mark holidays</strong> - Helps model understand attendance drops</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

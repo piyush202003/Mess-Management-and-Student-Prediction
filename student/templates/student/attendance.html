@@ -1,0 +1,37 @@
+{% extends "bases.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto p-6 bg-white shadow rounded-xl">
+  <h1 class="text-xl font-bold mb-4">Attendance History</h1>
+
+  <table class="min-w-full border">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="border px-4 py-2 text-left">Date</th>
+        <th class="border px-4 py-2 text-left">Meal</th>
+        <th class="border px-4 py-2 text-left">Provider</th>
+        <th class="border px-4 py-2 text-left">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        <td class="border px-4 py-2">{{ record.date }}</td>
+        <td class="border px-4 py-2">{{ record.get_meal_type_display }}</td>
+        <td class="border px-4 py-2">{{ record.subscription.plan.plan_name }} ({{ record.subscription.provider.username }})</td>
+        <td class="border px-4 py-2">
+          {% if record.present %}
+            <span class="text-green-600 font-semibold">Present</span>
+          {% else %}
+            <span class="text-red-600 font-semibold">Absent</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center py-4 text-gray-500">No attendance records yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

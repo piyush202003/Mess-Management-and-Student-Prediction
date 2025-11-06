@@ -1,0 +1,363 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Enables mobile responsiveness -->
+    <title>{% block title %}DINECAST{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            transition: all 0.4s ease-in-out;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+            border-radius: 0 0 .8rem .8rem;
+        }
+
+        .navbar.scrolled {
+            background-color: #232931 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.35rem;
+            letter-spacing: 0.5px;
+            background: linear-gradient(70deg, #0d6efd 25%, #1ee494 80%);
+            background-clip: text;
+            /* Standard (some browsers support this) */
+            -webkit-background-clip: text;
+            /* WebKit browsers */
+            -webkit-text-fill-color: transparent;
+            /* Make text transparent so gradient shows */
+        }
+
+        .navbar-brand:hover {
+            -webkit-text-fill-color: #0d6efd;
+        }
+
+        /* Make navbar-nav horizontally scrollable and inline on overflow */
+        .navbar-nav {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .navbar-nav .nav-item {
+            display: inline-block;
+            float: none;
+        }
+
+        .navbar-nav .nav-link {
+            padding: 0.5rem 0.75rem;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.84);
+            font-size: 1.05rem;
+            font-weight: 500;
+            position: relative;
+            margin-right: 0.2rem;
+            transition: color 0.2s, background 0.3s;
+        }
+
+        .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+
+        .navbar-nav .nav-link.active,
+        .navbar-nav .nav-link:hover {
+            color: #1ee494 !important;
+            background: rgba(13, 110, 253, 0.07);
+            border-radius: 0.35rem;
+        }
+
+        .navbar-nav .nav-link::after {
+            content: "";
+            display: block;
+            height: 2px;
+            width: 0;
+            background: linear-gradient(to right, #0d6efd, #1ee494 70%);
+            transition: width 0.3s;
+            margin-top: 2px;
+        }
+
+        .navbar-nav .nav-link.active::after,
+        .navbar-nav .nav-link:hover::after {
+            width: 50%;
+        }
+
+        .navbar-toggler {
+            border: none;
+            box-shadow: none !important;
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: #fff;
+        }
+
+        /* Dropdown menu for mobile */
+        @media (max-width: 991.98px) {
+            .navbar-nav {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                background: #232931;
+                border-radius: 0.75rem;
+                margin-top: 0.5rem;
+                white-space: normal;
+                overflow-x: visible;
+            }
+
+            .navbar-nav .nav-item {
+                display: block;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 0.5rem 1rem;
+                white-space: normal;
+            }
+        }
+
+        /* Content space below navbar */
+        main.container {
+            padding-top: 85px;
+        }
+
+        /* Footer styling */
+        footer {
+            background: linear-gradient(70deg, #1a1d23 70%, #0d6efd 90%);
+            color: #e0efff;
+            font-size: 1rem;
+            box-shadow: 0 -2px 14px 0 rgba(13, 110, 253, 0.06);
+            letter-spacing: 0.05rem;
+        }
+
+        /* Make alert messages more friendly */
+        .alert-dismissible .btn-close {
+            background-color: transparent;
+            opacity: 0.7;
+        }
+
+        .alert-dismissible .btn-close:hover {
+            opacity: 1;
+        }
+        /* Dropdown menu background and border to match navbar dark theme */
+        .dropdown-menu.dropdown-menu-end {
+            background-color: #232931;
+            border: 1px solid #1ee494;
+            border-radius: 0.35rem;
+            box-shadow: 0 8px 24px rgba(14, 187, 154, 0.3);
+            min-width: 12rem;
+        }
+
+        /* Dropdown items text color and font */
+        .dropdown-menu .dropdown-item {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Hover / focus background and text color on dropdown items */
+        .dropdown-menu .dropdown-item:hover,
+        .dropdown-menu .dropdown-item:focus,
+        .dropdown-menu .dropdown-item.active {
+            background: linear-gradient(90deg, #0d6efd, #1ee494);
+            color: #ffffff;
+        }
+
+        /* Remove default caret spacing on dropdown toggle */
+        .navbar-nav .dropdown-toggle::after {
+            margin-left: 0.25rem;
+            vertical-align: middle;
+        }
+
+        /* Adjust dropdown toggle active link background for dark mode */
+        .navbar-nav .nav-link.dropdown-toggle.active {
+            color: #1ee494 !important;
+            background: rgba(14, 187, 154, 0.15);
+            border-radius: 0.35rem;
+        }
+        /* Make navbar-collapse container handle horizontal scrolling */
+        .navbar-collapse {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Remove horizontal scroll and nowrap from navbar-nav */
+        .navbar-nav {
+            white-space: normal;
+            overflow: visible;
+        }
+
+        /* Let dropdown be positioned outside and reset position context */
+        .navbar-nav > .dropdown {
+            position: static; /* Bootstrap default dropdown requires this to escape overflow clipping */
+        }
+
+        /* Dropdown menu styling remains */
+        .dropdown-menu.dropdown-menu-end {
+            background-color: #232931;
+            border: 1px solid #1ee494;
+            border-radius: 0.35rem;
+            box-shadow: 0 8px 24px rgba(14, 187, 154, 0.3);
+            min-width: 12rem;
+            z-index: 1050; /* Ensure it stays above other content */
+        }
+
+    </style>
+    {% block extra_css %}{% endblock %}
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top py-2 px-1">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="{% static 'img/mess_logo.jpg' %}" alt="" width="36" class="me-2 d-none d-sm-inline">
+                <!-- OPTIONAL LOGO (replace src if wanted) -->
+                DineCast
+            </a>
+            <button class="navbar-toggler shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
+                aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-lg-2">
+    {% if user.is_authenticated %}
+    
+    <!-- Home -->
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'provider_home' %}active{% endif %}" href="{% url 'provider_home' %}">
+            <i class="fas fa-home fa-fw me-1"></i>Home
+        </a>
+    </li>
+
+    <!-- Grouped Services Dropdown -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle
+            {% if request.resolver_match.url_name == 'provider_plans' or request.resolver_match.url_name == 'menu_list' or request.resolver_match.url_name == 'daily_menu_list' or request.resolver_match.url_name == 'provider_calendar' %}
+                active
+            {% endif %}"
+           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Services
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'provider_plans' %}active{% endif %}" href="{% url 'provider_plans' %}">Plans</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'menu_list' %}active{% endif %}" href="{% url 'menu_list' %}">Menu</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'daily_menu_list' %}active{% endif %}" href="{% url 'daily_menu_list' %}">Weekly Menu</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'provider_calendar' %}active{% endif %}" href="{% url 'provider_calendar' %}">Calendar</a></li>
+        </ul>
+    </li>
+
+    <!-- Notifications -->
+    <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'notification' %}active{% endif %}" href="{% url 'notification' %}">
+            <i class="fas fa-bell fa-fw me-1"></i>Notification
+        </a>
+    </li>
+
+    <!-- Grouped Prediction Dropdown -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle
+            {% if request.resolver_match.url_name == 'recommend_dish' or request.resolver_match.url_name == 'predict_dish' %}
+                active
+            {% endif %}"
+           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Prediction
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'provider_dashboard' %}active{% endif %}" href="{% url 'provider_dashboard' %}">Dashboard</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'predict_dish' %}active{% endif %}" href="{% url 'predict_dish' provider_id=user.id %}">Predict Students</a></li>
+        </ul>
+    </li>
+
+    <!-- Grouped Management Dropdown -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle
+            {% if request.resolver_match.url_name == 'manage_requests' or request.resolver_match.url_name == 'manage_students' or request.resolver_match.url_name == 'provider_profile' %}
+                active
+            {% endif %}"
+           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Management
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'manage_requests' %}active{% endif %}" href="{% url 'manage_requests' %}">Requests</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'manage_students' %}active{% endif %}" href="{% url 'manage_students' %}">Students</a></li>
+            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'provider_profile' %}active{% endif %}" href="{% url 'provider_profile' %}">Profile</a></li>
+        </ul>
+    </li>
+
+    <!-- Logout -->
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'logout' %}">
+            <i class="fas fa-sign-out-alt fa-fw me-1"></i>Logout
+        </a>
+    </li>
+
+    {% endif %}
+</ul>
+
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" style="min-height:80vh;">
+        {% if messages %}
+        <div class="pt-2">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="mt-auto py-3 shadow-sm">
+        <div class="container">
+            <p class="mb-0 text-center">&copy; 2024 DineCast. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}
+    
+    {% endblock %}
+    {% block extra_js %}{% endblock %}
+    <script>
+        // Optional: Navbar background on scroll for effect
+        document.addEventListener('scroll', function () {
+            var navbar = document.querySelector('.navbar');
+            if (window.scrollY > 10) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+
+</html>

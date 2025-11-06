@@ -1,0 +1,24 @@
+{% extends "bases.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto p-6 bg-white shadow rounded-xl">
+  <h1 class="text-xl font-bold mb-4">My Coupons</h1>
+
+  <div class="grid gap-4">
+    {% for coupon in coupons %}
+    <div class="p-4 border rounded-lg shadow-sm bg-gray-50">
+      <h2 class="text-lg font-semibold">{{ coupon.subscription.plan.plan_name }}</h2>
+      <p class="text-gray-600">
+        Provider: {{ coupon.subscription.provider.username }}
+      </p>
+      <p class="mt-2">
+        Remaining Coupons:
+        <span class="font-bold text-blue-600">{{ coupon.remaining }}</span> /
+        {{ coupon.total }}
+      </p>
+    </div>
+    {% empty %}
+    <p class="text-gray-500">You don’t have any active coupons yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

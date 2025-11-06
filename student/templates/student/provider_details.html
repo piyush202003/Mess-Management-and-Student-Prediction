@@ -1,0 +1,347 @@
+{% extends 'bases.html' %}
+
+{% block title %}{{ provider.mess_name|default:"Mess Details" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+  /* body {
+    background-color: #d6d6d6;
+    font-family: 'Inter', sans-serif;
+  } */
+
+  /* Profile Card */
+  .profile-card {
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgb(0 0 0 / 0.08);
+    overflow: hidden;
+    background: white;
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 2rem;
+  }
+  .profile-card:hover {
+    box-shadow: 0 15px 40px rgb(0 0 0 / 0.12);
+  }
+
+  .profile-header {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: white;
+    padding: 100px 20px 60px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .profile-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* background: linear-gradient(180deg, rgba(0,116,217,0.7) 0%, rgba(0,50,102,0.8) 100%); */
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    z-index: 0;
+    animation: backgroundPulse 8s infinite alternate ease-in-out;
+  }
+  /* @keyframes backgroundPulse {
+    0% { background: linear-gradient(180deg, rgba(0,116,217,0.7) 0%, rgba(0,50,102,0.8) 100%); }
+    100% { background: linear-gradient(180deg, rgba(0,90,180,0.8) 0%, rgba(0,40,85,0.9) 100%); }
+  } */
+  .profile-header h2,
+  .profile-header p {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    text-shadow: 0 3px 6px rgb(0 0 0 / 0.4);
+  }
+
+  .profile-name {
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .profile-details {
+    padding: 1.5rem 2rem 2rem;
+  }
+  .profile-details h6 {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: #0d6efd;
+  }
+
+  /* Icons */
+  .bi {
+    font-size: 1.1rem;
+    color: #0d6efd;
+  }
+
+  /* Plan Cards */
+  .plan-card {
+    border-radius: 16px;
+    box-shadow: 0 5px 18px rgb(0 0 0 / 0.07);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+    background: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .plan-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.25);
+  }
+  .plan-img {
+    height: 200px;
+    object-fit: cover;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    flex-shrink: 0;
+  }
+  .placeholder-image {
+    height: 200px;
+    background-color: #e9ecef;
+    color: #adb5bd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.25rem;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    flex-shrink: 0;
+  }
+  .card-body {
+    flex-grow: 1;
+    padding: 1.25rem 1.5rem;
+  }
+  .card-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #0d6efd;
+  }
+  .card-text {
+    font-size: 0.95rem;
+    color: #555555;
+  }
+  .card-text.text-muted {
+    font-style: italic;
+    color: #6c757d;
+    margin-bottom: 0.7rem;
+  }
+  hr.my-2 {
+    margin: 0.4rem 0 1rem;
+    border-color: #dee2e6;
+  }
+  .fw-bold {
+    font-weight: 600 !important;
+  }
+
+  .card-footer {
+    padding: 0.75rem 1.5rem;
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+  .card-footer.d-flex {
+    align-items: center;
+  }
+  .btn-primary.btn-sm {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .btn-outline-primary.btn-lg {
+    border-radius: 50px;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+    padding: 12px 25px;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .btn-outline-primary.btn-lg:hover {
+    background-color: #0d6efd;
+    color: white;
+  }
+
+  /* Badge enhancements */
+  .badge.bg-warning {
+    background: #ffc107;
+    color: #212529;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .badge.bg-success {
+    background: #198754;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Sticky menu button on small screens */
+  @media (max-width: 576px) {
+    .d-grid {
+      position: sticky;
+      bottom: 15px;
+      z-index: 1055;
+      padding: 0 1rem 1rem;
+      background-color: transparent;
+    }
+    .btn-outline-primary.btn-lg {
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 14px;
+    }
+  }
+  
+  /* Responsive typography & layout tweaks */
+  @media (max-width: 768px) {
+    .profile-header {
+      padding: 70px 15px 40px;
+    }
+    .profile-name {
+      font-size: 1.75rem;
+    }
+    .profile-details h6 {
+      font-size: 0.95rem;
+    }
+  }
+
+  /* Reviews section */
+  .reviews-placeholder {
+    background-color: #e0e7ff;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    font-style: italic;
+    text-align: center;
+    color: #3b49df;
+    box-shadow: 0 5px 15px rgba(59,73,223,0.15);
+    margin-bottom: 3rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      
+      <!-- Mess Provider Profile Section -->
+      <div class="card profile-card">
+        <div class="profile-header" 
+             style="background-image: url('{% if provider.mess_photo %}{{ provider.mess_photo.url }}{% else %}https://placehold.co/800x300/e9ecef/adb5bd?text=No+Photo{% endif %}');">
+          <h2 class="profile-name">{{ provider.mess_name|default:"Mess Name" }}</h2>
+          <p class="mb-0">{{ provider.full_name|default:"Not Available" }}</p>
+        </div>
+        <div class="card-body profile-details">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <h6><i class="bi bi-telephone-fill me-2"></i>Phone Number</h6>
+              <p>{{ provider.phone_no|default:"Null" }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-envelope-fill me-2"></i>Email</h6>
+              <p>{{ provider.email|default:"Null" }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-clock-fill me-2"></i>Lunch Timings</h6>
+              <p>{{ provider.lunch_start|time:"g:i A" }} - {{ provider.lunch_end|time:"g:i A" }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-clock-fill me-2"></i>Dinner Timings</h6>
+              <p>{{ provider.dinner_start|time:"g:i A" }} - {{ provider.dinner_end|time:"g:i A" }}</p>
+            </div>
+            <div class="col-12">
+              <h6><i class="bi bi-geo-alt-fill me-2"></i>Address</h6>
+              <p>{{ provider.address|default:"Null" }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-building me-2"></i>Service Type (Dining/Tiffin)</h6>
+              <p>{{ provider.get_service_type_display|default:"Null" }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-cup-hot-fill me-2"></i>Mess Type (Veg/Non-Veg)</h6>
+              <p>{{ provider.get_mess_type_display|default:"Null" }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="d-grid gap-2 px-3 pb-3">
+        <a href="{% url 'public_provider_menu' provider.user.id %}" class="btn btn-outline-primary btn-lg" aria-label="View Scheduled Menu">
+          <i class="bi bi-calendar-week"></i> View Scheduled Menu
+        </a>
+      </div>
+
+      <!-- Available Plans Section -->
+      <div class="mt-5">
+        <h4 class="fw-bold text-center mb-4">Available Plans</h4>
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          {% if plans %}
+            {% for plan in plans %}
+            <div class="col">
+              <div class="card plan-card h-100">
+                {% if plan.plan_image %}
+                  <img src="{{ plan.plan_image.url }}" class="card-img-top plan-img" alt="{{ plan.plan_name }}">
+                {% else %}
+                  <div class="placeholder-image" aria-label="No Image Available">No Image Available</div>
+                {% endif %}
+                <div class="card-body">
+                  <h5 class="card-title fw-bold">{{ plan.plan_name }}</h5>
+                  <p class="card-text text-muted mb-1">{{ plan.description }}</p>
+                  <hr class="my-2">
+                  <p class="mb-1"><span class="fw-bold">Price:</span> ₹{{ plan.price }}</p>
+                  <p class="mb-1"><span class="fw-bold">Type:</span> {{ plan.get_plan_type_display }}</p>
+                  <p class="mb-1"><span class="fw-bold">Meals:</span> {{ plan.get_meal_type_display }}</p>
+                  <p class="mb-1"><span class="fw-bold">Coupons:</span> {{ plan.coupons }}</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                  {% if current_request %}
+                    {% if current_request.status == "PENDING" %}
+                      <span class="badge bg-warning text-dark" aria-label="Request Sent">Request Sent</span>
+                    {% elif current_request.status == "ACCEPTED" and current_request.used_coupons < current_request.plan.coupons %}
+                      <span class="badge bg-success" aria-label="Active Subscription">Active Subscription</span>
+                    {% elif current_request.status == "ACCEPTED" and current_request.used_coupons >= current_request.plan.coupons %}
+                      <a href="{% url 'request_subscription' plan.pk %}" class="btn btn-primary btn-sm">Request Again</a>
+                    {% endif %}
+                  {% else %}
+                    <form action="{% url 'request_subscription' plan.pk %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary btn-sm" aria-label="Request Subscription for {{ plan.plan_name }}">Request Subscription</button>
+                    </form>
+                  {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                  <small class="text-muted">Service: {{ plan.get_service_type_display }}</small>
+                  <small class="text-muted">Mess: {{ plan.get_mess_type_display }}</small>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="col-12 text-center">
+              <div class="alert alert-info" role="alert">This provider has not added any plans yet.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Reviews Section -->
+      <div class="mt-5">
+        <h4 class="fw-bold text-center mb-4">Student Reviews</h4>
+        <div class="reviews-placeholder" role="alert" aria-live="polite" tabindex="0">
+          Reviews section is not yet implemented.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% endblock %}

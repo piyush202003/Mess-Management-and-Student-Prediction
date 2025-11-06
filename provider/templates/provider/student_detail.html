@@ -1,0 +1,158 @@
+{% extends 'basep.html' %}
+{% block title %}Student Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Student Details</h1>
+        <span class="badge rounded-pill bg-primary bg-gradient fs-6">Attendance Tracker</span>
+    </div>
+    <a href="{% url 'manage_students' %}" class="btn btn-light border shadow-sm px-3 py-2 d-flex gap-2 align-items-center">
+        <i class="fas fa-arrow-left"></i>
+        <span>Back to All Students</span>
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card shadow sticky-top border-0" style="top: 1rem;">
+            <div class="bg-primary bg-gradient card-header text-center text-white rounded-top">
+                <i class="fas fa-user-graduate fa-3x mb-2"></i>
+                <h4 class="card-title mb-0">{{ student.get_full_name|default:student.username }}</h4>
+            </div>
+            <div class="card-body text-center bg-light">
+                {% if student.student_profile.profile_photo %}
+                    <img src="{{ student.student_profile.profile_photo.url }}" class="img-fluid rounded-circle mb-3 border border-3 border-primary shadow-sm" style="width: 140px; height: 140px; object-fit: cover;" alt="Profile Photo">
+                {% else %}
+                    <div class="bg-secondary rounded-circle mb-3 d-flex justify-content-center align-items-center" style="width: 140px; height: 140px;">
+                        <i class="fas fa-user fa-3x text-white"></i>
+                    </div>
+                {% endif %}
+                <ul class="list-group list-group-flush text-start mb-2">
+                    <li class="list-group-item"><i class="fas fa-venus-mars me-2 text-primary"></i><strong>Gender:</strong> {{ student.student_profile.gender|default:"Not set" }}</li>
+                    <li class="list-group-item"><i class="fas fa-calendar-day me-2 text-primary"></i><strong>DOB:</strong> {{ student.student_profile.dob|date:"d M, Y"|default:"Not set" }}</li>
+                    <li class="list-group-item"><i class="fas fa-envelope me-2 text-primary"></i><strong>Email:</strong> {{ student.email }}</li>
+                    <li class="list-group-item"><i class="fas fa-phone-alt me-2 text-primary"></i><strong>Phone:</strong> {{ student.phone|default:"Not set" }}</li>
+                    <li class="list-group-item"><i class="fas fa-map-marker-alt me-2 text-primary"></i><strong>Address:</strong> {{ student.student_profile.address|default:"Not set" }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Subscription & Attendance -->
+    <div class="col-lg-8">
+        {% if active_subscription %}
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-success bg-gradient text-white d-flex align-items-center">
+                <i class="fas fa-id-card-alt fa-lg me-2"></i>
+                <h5 class="mb-0">Subscription Details</h5>
+            </div>
+            <div class="card-body bg-light">
+                <h6 class="card-title"><i class="fas fa-utensils text-success me-2"></i>
+                    Plan: <span class="badge bg-primary">{{ active_subscription.mess_plan.plan_name }}</span>
+                </h6>
+                <p><strong>Coupons Remaining:</strong>
+                    <span class="badge bg-success">{{ active_subscription.remaining_coupons }}</span>
+                    / <span class="badge bg-secondary">{{ active_subscription.total_coupons }}</span>
+                </p>
+                <hr>
+                <h6><i class="fas fa-plus-circle text-success me-2"></i>Add More Coupons</h6>
+                <form action="{% url 'increase_coupons' active_subscription.id %}" method="post" class="row g-2 align-items-center">
+                    {% csrf_token %}
+                    <div class="col">
+                        <input type="number" name="coupons_to_add" class="form-control border-primary" placeholder="e.g., 30" min="1" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-success">
+                            Add
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-info bg-gradient text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-history fa-lg me-2"></i>Attendance History
+                </div>
+            </div>
+            <!-- Filter Card - Collapsible & Decorated -->
+            <div class="collapse show" id="filterCollapse">
+                <div class="card-body py-3">
+                    <form method="get" class="row gy-2 gx-3 align-items-end">
+                        <div class="col-md-5">
+                            <label for="date" class="form-label mb-0">Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="plan" class="form-label mb-0">Plan</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-list"></i></span>
+                                <select class="form-select" id="plan" name="plan">
+                                    <option value="">All</option>
+                                    {% for plan in student_plans %}
+                                        <option value="{{ plan.mess_plan__id }}" {% if plan.mess_plan__id|stringformat:"s" == selected_plan|stringformat:"s" %}selected{% endif %}>
+                                            {{ plan.mess_plan__plan_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-success w-100" data-bs-toggle="tooltip" title="Apply filters">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <a href="?" class="btn btn-outline-light w-100 border border-1" style="border-color: #fff;" data-bs-toggle="tooltip" title="Clear filters">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Attendance Table -->
+            <div class="card-body pt-0">
+                <div class="table-responsive rounded" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 border">
+                        <thead class="table-info sticky-top" style="top: 0;">
+                            <tr>
+                                <th>Date</th>
+                                <th>Meal</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_history %}
+                            <tr>
+                                <td><i class="far fa-calendar-alt text-info me-1"></i> {{ record.date|date:"d M, Y" }}</td>
+                                <td><i class="fas fa-utensil-spoon text-info me-1"></i> {{ record.get_meal_type_display }}</td>
+                                <td><span class="badge bg-primary">{{ record.mess_plan.plan_name }}</span></td>
+                                <td>
+                                    {% if record.status == 'PRESENT' %}
+                                        <span class="badge bg-success">{{ record.get_status_display }}</span>
+                                    {% elif record.status == 'ABSENT' %}
+                                        <span class="badge bg-danger">{{ record.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ record.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3"><i class="fas fa-info-circle me-1"></i>No attendance history found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

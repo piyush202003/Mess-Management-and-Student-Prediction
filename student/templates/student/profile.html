@@ -1,0 +1,170 @@
+
+{% extends 'bases.html' %}
+{% block title %}Student Profile{% endblock %}
+{% block extra_css %}
+    <style>
+        body {
+            background-color: #f0f2f5;
+        }
+        .profile-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .profile-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0d6efd;
+            margin-bottom: 1rem;
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        .btn-update {
+            width: 100%;
+            padding: 10px;
+        }
+        .alert-messages {
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container profile-container">
+        <div class="profile-header">
+            <h2 class="text-primary">Your Profile</h2>
+            {% if profile.profile_photo %}
+                <img src="{{ profile.profile_photo.url }}" alt="Profile Photo" class="profile-photo">
+            {% else %}
+                <img src="https://placehold.co/150x150/e0e0e0/ffffff?text=No+Photo" alt="Default Profile Photo" class="profile-photo">
+            {% endif %}
+        </div>
+
+        <!-- Read-only view section (initially visible) -->
+        <div id="profile-view">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Full Name</label>
+                    <p class="form-control-static">{{ profile.full_name|default:'Null' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone Number</label>
+                    <p class="form-control-static">{{ profile.phone_no|default:'Null' }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <p class="form-control-static">{{ profile.email|default:'Null' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender</label>
+                    <p class="form-control-static">{{ profile.gender|default:'Null' }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Date of Birth</label>
+                    <p class="form-control-static">{{ profile.dob|date:"F d, Y"|default:'Null' }}</p>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Address</label>
+                <p class="form-control-static">{{ profile.address|default:'Null' }}</p>
+            </div>
+
+            <button id="edit-button" class="btn btn-primary btn-update">Edit Profile</button>
+        </div>
+
+        <!-- Editable form section (initially hidden) -->
+        <form id="profile-form" method="post" enctype="multipart/form-data" style="display:none;">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="full_name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Enter your full name" value="{{ profile.full_name|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="phone_no" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone_no" name="phone_no" placeholder="Enter your phone number" value="{{ profile.phone_no|default:'' }}">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" value="{{ profile.email|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select class="form-select" id="gender" name="gender">
+                        <option value="" {% if not profile.gender %}selected{% endif %} disabled>Select Gender</option>
+                        <option value="Male" {% if profile.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if profile.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if profile.gender == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="dob" class="form-label">Date of Birth</label>
+                    <input type="date" class="form-control" id="dob" name="dob" value="{{ profile.dob|date:'Y-m-d'|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="profile_photo" class="form-label">Profile Photo</label>
+                    <input type="file" class="form-control" id="profile_photo" name="profile_photo">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <textarea class="form-control" id="address" name="address" rows="3" placeholder="Enter your address">{{ profile.address|default:'' }}</textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-update">Update Profile</button>
+        </form>
+
+        <!-- <div class="text-center mt-3">
+            <a href="{% url 'select_role' %}" class="btn btn-secondary">Go to Home</a>
+        </div> -->
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-danger{% endif %} text-center" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    </div>
+    
+{% endblock %}
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editButton = document.getElementById('edit-button');
+            const profileView = document.getElementById('profile-view');
+            const profileForm = document.getElementById('profile-form');
+
+            editButton.addEventListener('click', function() {
+                profileView.style.display = 'none';
+                profileForm.style.display = 'block';
+            });
+        });
+    </script>
+{% endblock %}

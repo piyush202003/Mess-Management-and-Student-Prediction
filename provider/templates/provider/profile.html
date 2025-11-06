@@ -1,0 +1,88 @@
+{% extends 'basep.html' %}
+{% block title %}Mess Provider Profile{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Mess Provider Profile</h2>
+
+    <div class="card p-4 shadow">
+        <div class="row">
+        <div class="col-md-4">
+            <img src="{{ profile.mess_photo.url }}" class="img-fluid rounded" alt="Mess Photo">
+            <h5 class="mt-3">{{ profile.mess_name|default:"(No Mess Name)" }}</h5>
+        </div>
+        <div class="col-md-8">
+            <p><strong>Full Name:</strong> {{ profile.full_name|default:"N/A" }}</p>
+            <p><strong>Phone Number:</strong> {{ profile.phone_no|default:"N/A" }}</p>
+            <p><strong>Email:</strong> {{ profile.email|default:"N/A" }}</p>
+            <p><strong>Service Type:</strong> {{ profile.service_type|default:"N/A" }}</p>
+            <p><strong>Mess Type:</strong> {{ profile.mess_type|default:"N/A" }}</p>
+            <p><strong>Address:</strong> {{ profile.address|default:"N/A" }}</p>
+            <p><strong>Lunch Time:</strong> {{ profile.lunch_start|default:"-" }} - {{ profile.lunch_end|default:"-" }}</p>
+            <p><strong>Dinner Time:</strong> {{ profile.dinner_start|default:"-" }} - {{ profile.dinner_end|default:"-" }}</p>
+            <p><strong>QR Code:</strong><br>
+            {% if profile.mess_qr %}
+                <img src="{{ profile.mess_qr.url }}" alt="QR Code" width="150">
+            {% else %}
+                Not Generated
+            {% endif %}
+            </p>
+        </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary mt-3" onclick="document.getElementById('edit-form').style.display='block'" style="margin-bottom: 10px;">Edit Profile</button>
+
+    <form id="edit-form" method="post" enctype="multipart/form-data" class="mt-4" style="display:none;">
+        {% csrf_token %}
+        <label class="form-label">Update Profile Information</label>
+        <label class="form-label">Full Name</label>
+        <input type="text" name="full_name" class="form-control mb-2" placeholder="{{ profile.full_name|default:'Full Name' }}">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" name="phone_no" class="form-control mb-2" placeholder="{{ profile.phone_no|default:'Phone Number' }}">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control mb-2" placeholder="{{ profile.email|default:'Email' }}">
+        <label class="form-label">Service Type</label>
+        <select name="service_type" class="form-control mb-2">
+            <option value="DINING" {% if profile.service_type == "DINING" %}selected{% endif %}>Dining</option>
+            <option value="TIFINE" {% if profile.service_type == "TIFINE" %}selected{% endif %}>Tiffin</option>
+            <option value="BOTH" {% if profile.service_type == "BOTH" %}selected{% endif %}>Both</option>
+        </select>     
+        <label class="form-label">Mess Type</label>   
+        <select name="mess_type" class="form-control mb-2">
+            <option value="VEG" {% if profile.mess_type == "VEG" %}selected{% endif %}>Veg</option>
+            <option value="NON-VEG" {% if profile.mess_type == "NON-VEG" %}selected{% endif %}>Non-Veg</option>
+            <option value="BOTH" {% if profile.mess_type == "BOTH" %}selected{% endif %}>Both</option>
+        </select>
+        <label class="form-label">Address</label>
+        <input type="text" name="address" class="form-control mb-2" placeholder="{{ profile.address|default:'Address' }}">
+        <label class="form-label">Lunch Time</label>
+        <div class="row mb-2">
+            <div class="col">
+                <label class="form-label">Start</label>
+                <input type="time" name="lunch_start" class="form-control" value="{{ profile.lunch_start|default_if_none:'' }}">
+            </div>
+            <div class="col">
+                <label class="form-label">End</label>
+                <input type="time" name="lunch_end" class="form-control" value="{{ profile.lunch_end|default_if_none:'' }}">
+            </div>
+        </div>
+        <label class="form-label">Dinner Time</label>
+        <div class="row mb-2">
+            <div class="col">
+                <label class="form-label">Start</label>
+                <input type="time" name="dinner_start" class="form-control" value="{{ profile.dinner_start|default_if_none:'' }}">
+            </div>
+            <div class="col">
+                <label class="form-label">End</label>
+                <input type="time" name="dinner_end" class="form-control" value="{{ profile.dinner_end|default_if_none:'' }}">
+            </div>
+        </div>
+        <label class="form-label">Mess Name & Photo</label>
+        <input type="text" name="mess_name" class="form-control mb-2" placeholder="{{ profile.mess_name|default:'Mess Name' }}">
+        <input type="file" name="mess_photo" class="form-control mb-2" placeholder="Upload Mess Photo" accept="image/*">
+
+        <button type="submit" class="btn btn-success" style="margin-bottom: 1rem;">Save Changes</button>
+    </form>
+    </div>
+{% endblock %}

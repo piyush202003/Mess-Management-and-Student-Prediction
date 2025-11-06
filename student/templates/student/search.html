@@ -1,0 +1,121 @@
+
+{% extends 'bases.html' %}
+{% block title %}Find Mess Provider{% endblock %}
+{% block extra_css %}
+        <style>
+        body {
+            background-color: #d6d6d6;
+            font-family: 'Inter', sans-serif;
+        }
+        .search-form-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 40px;
+        }
+        .provider-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .provider-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+        .card-img-top {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .placeholder-image {
+            height: 200px;
+            background-color: #e9ecef;
+            color: #adb5bd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .card-title {
+            font-weight: bold;
+        }
+        @media (max-width: 576px) {
+            .search-form-card {
+                padding: 1rem !important;
+            }
+            .placeholder-image i {
+                font-size: 2rem;
+            }
+            .card-title {
+                font-size: 1.1rem;
+            }
+            .badge {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <!-- Search Form Section -->
+        <div class="card search-form-card p-4">
+            <h3 class="card-title fw-bold text-center mb-4">Find a Mess Provider</h3>
+            <form method="post" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-5">
+                    <input type="text" class="form-control rounded-pill" name="query" placeholder="Search by Mess Name..." value="{{ query }}">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control rounded-pill" name="address" placeholder="Search by Address..." value="{{ address }}">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="bi bi-search me-2"></i>Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Provider Results Section -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% if providers %}
+                {% for provider in providers %}
+                <div class="col">
+                    <div class="card provider-card h-100">
+                        {% if provider.mess_photo %}
+                            <img src="{{ provider.mess_photo.url }}" class="card-img-top" alt="{{ provider.mess_name }}">
+                        {% else %}
+                            <div class="placeholder-image">
+                                <i class="bi bi-shop"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ provider.mess_name|default:"Not Available" }}</h5>
+                            <p class="card-text text-muted mb-1">
+                                <i class="bi bi-geo-alt-fill me-1"></i>{{ provider.address|default:"Not Available" }}
+                            </p>
+                            <p class="card-text mb-1">
+                                <span class="badge bg-secondary">{{ provider.get_service_type_display }}</span>
+                                <span class="badge bg-success">{{ provider.get_mess_type_display }}</span>
+                            </p>
+                            <a href="{% url 'provider_details' provider.pk %}" class="btn btn-primary mt-3 w-100 rounded-pill">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <div class="alert alert-info" role="alert">
+                        No mess providers found matching your search. Try a different query.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+{% endblock %}
+

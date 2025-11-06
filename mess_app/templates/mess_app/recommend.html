@@ -1,0 +1,212 @@
+{% extends "basep.html" %}
+{% load static %}
+
+{% block title %}AI Dish Recommendations - {{ provider.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recommendation-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .recommendation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .rank-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #000; }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%); color: #000; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); color: #fff; }
+    .attendance-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-robot"></i> AI Dish Recommendations</h2>
+                    <p class="text-muted">Get smart recommendations for maximum attendance</p>
+                </div>
+                <div>
+                    <a href="{% url 'predict_dish' provider.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-brain"></i> Manual Prediction
+                    </a>
+                    <a href="{% url 'analytics' provider.id %}" class="btn btn-info">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not has_model %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No Model Trained Yet</strong>
+        <p class="mb-0">Train your model first to get AI-powered recommendations.</p>
+        <a href="{% url 'retrain_model' provider.id %}" class="btn btn-sm btn-warning mt-2">
+            Train Model Now
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Left: Input Form -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card recommendation-card">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h"></i> Set Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="day" class="form-label">Day of Week</label>
+                            <select name="day" id="day" class="form-select" required>
+                                <option value="">-- Select Day --</option>
+                                {% for d in days %}
+                                    <option value="{{ d }}" {% if d == selected_day %}selected{% endif %}>{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="meal_time" class="form-label">Meal Time</label>
+                            <select name="meal_time" id="meal_time" class="form-select" required>
+                                <option value="">-- Select Meal --</option>
+                                {% for m in meals %}
+                                    <option value="{{ m }}" {% if m == selected_meal_time %}selected{% endif %}>{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="holiday" class="form-label">Holiday</label>
+                            <select name="holiday" id="holiday" class="form-select" required>
+                                <option value="None" {% if selected_holiday == "None" %}selected{% endif %}>None</option>
+                                <option value="Yes" {% if selected_holiday == "Yes" %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" {% if not has_model %}disabled{% endif %}>
+                            <i class="fas fa-magic"></i> Get Recommendations
+                        </button>
+                        
+                        {% if not has_model %}
+                        <small class="text-muted d-block mt-2 text-center">Train your model first</small>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            {% if has_model and model_stats %}
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Model Info</h6>
+                </div>
+                <div class="card-body">
+                    <small>
+                        <strong>Training Data:</strong> {{ model_stats.total_samples }} records<br>
+                        <strong>Avg Attendance:</strong> {{ model_stats.avg_attendance|floatformat:1 }}<br>
+                        {% if model_stats.best_dishes %}
+                        <strong>Top Dishes:</strong><br>
+                        <ul class="mb-0 ps-3">
+                            {% for dish in model_stats.best_dishes %}
+                            <li>{{ dish }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Recommendations -->
+        <div class="col-lg-8 col-md-7">
+            {% if recommendation_made %}
+                {% if recommendations %}
+                <h4 class="mb-3">
+                    <i class="fas fa-trophy"></i> Top 3 Recommendations for 
+                    <span class="text-primary">{{ selected_day }}</span> {{ selected_meal_time }}
+                </h4>
+
+                <div class="row">
+                    {% for rec in recommendations %}
+                    <div class="col-12 mb-3">
+                        <div class="card recommendation-card position-relative">
+                            <div class="rank-badge rank-{{ forloop.counter }}">
+                                #{{ forloop.counter }}
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h4 class="mb-2">
+                                            {{ rec.dish_name }}
+                                            {% if rec.is_special %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-star"></i> Special
+                                            </span>
+                                            {% endif %}
+                                        </h4>
+                                        <p class="text-muted mb-0">
+                                            <!-- <span class="badge" style="background: {% if rec.dish_type == 'nonveg' %}#ff6b6b{% else %}#51cf66{% endif %}"> -->
+                                            <span class="badge">   
+                                              {{ rec.dish_type|upper }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="attendance-number">{{ rec.predicted_attendance }}</div>
+                                        <small class="text-muted">Expected Students</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Pro Tip:</strong> The #1 recommendation is predicted to bring the highest attendance. 
+                    Consider preparing this dish for {{ selected_day }} {{ selected_meal_time }}!
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    No dishes available in your menu. Please add dishes first.
+                </div>
+                {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-robot fa-5x text-muted mb-3"></i>
+                <h4 class="text-muted">Select parameters to get AI recommendations</h4>
+                <p class="text-muted">Our AI will analyze your historical data and suggest the best dishes</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

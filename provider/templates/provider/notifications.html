@@ -1,0 +1,107 @@
+{% extends 'basep.html' %}
+{% load static %}
+
+{% block title %}Mess Predictor - Notifications{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Unread notifications glow */
+    .notification-unread {
+        background-color: #e7f1ff;
+        border-left: 5px solid #0d6efd;
+        box-shadow: 0 0 12px rgba(13, 110, 253, 0.6);
+        transition: all 0.4s ease;
+    }
+    .notification-read {
+        background-color: #f9f9f9;
+        border-left: 5px solid #ced4da;
+        opacity: 0.85;
+        transition: background-color 0.3s ease;
+    }
+    .notification-item:hover {
+        transform: scale(1.02);
+        background-color: #dbeafe;
+        cursor: pointer;
+        transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+    .list-group-item {
+        border-radius: 10px;
+        margin-bottom: 0.6rem;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    }
+    .notification-timestamp {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #4a5568;
+        margin-bottom: 0.35rem;
+    }
+    .notification-message {
+        font-size: 1rem;
+        color: #2d3748;
+        white-space: pre-wrap;
+    }
+    .badge-new {
+        background-color: #0d6efd;
+        color: white;
+        font-weight: 700;
+        font-size: 0.8rem;
+        padding: 0.45em 0.85em;
+        border-radius: 9999px;
+        user-select: none;
+    }
+    @media (max-width: 576px) {
+        .container {
+            padding: 1rem;
+        }
+        .list-group-item {
+            padding: 1rem 1.2rem;
+        }
+        .notification-message {
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4 text-primary fw-bold">📬 Notifications</h3>
+
+    {% if notifications %}
+        <ul class="list-group">
+            {% for n in notifications %}
+            <li class="list-group-item notification-item {% if not n.is_read %}notification-unread{% else %}notification-read{% endif %}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="flex-grow-1">
+                        <div class="notification-timestamp">{{ n.created_at|date:"M d, Y H:i" }}</div>
+                        <div class="notification-message">{{ n.message }}</div>
+                    </div>
+                    {% if not n.is_read %}
+                    <span class="badge badge-new align-self-start ms-3">New</span>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="alert alert-info mt-4 text-center fs-5">
+            No notifications yet.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fade out unread notification glow after 2 seconds
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.notification-unread').forEach(item => {
+            setTimeout(() => {
+                item.classList.remove('notification-unread');
+                item.classList.add('notification-read');
+            }, 2000);
+        });
+    });
+</script>
+{% endblock %}

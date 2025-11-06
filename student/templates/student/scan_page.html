@@ -1,0 +1,95 @@
+{% extends 'bases.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 text-center">
+    <h2 class="mb-3">Scan Provider QR Code</h2>
+    <p class="text-muted">Align the QR code within the frame to mark your attendance.</p>
+
+    <!-- Camera selection dropdown -->
+    <div class="mb-3">
+        <label for="camera-select" class="form-label">Select Camera:</label>
+        <select id="camera-select" class="form-select" style="max-width: 320px; margin: 0 auto;"></select>
+    </div>
+
+    <div id="reader" style="width: 320px; margin: 0 auto;"></div>
+
+    <div class="mt-3" id="scan-result" style="display: none;">
+        <p class="fw-bold">Scanned QR:</p>
+        <p id="result-text" class="text-primary"></p>
+    </div>
+
+    <a href="{% url 'student_home' %}" class="btn btn-secondary mt-4">Back to Home</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const qrScanner = new Html5Qrcode("reader");
+    let cameras = [];
+    let currentCameraId = null;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        qrScanner.stop().then(() => {
+            document.getElementById("scan-result").style.display = "block";
+            document.getElementById("result-text").innerText = decodedText;
+
+            if (decodedText.includes("/student/scan/")) {
+                window.location.href = decodedText;
+            } else {
+                alert("Invalid QR code. Please scan a provider's QR code.");
+                location.reload();
+            }
+        });
+    }
+
+    function onScanError(errorMessage) {
+        // console.log("Scan error:", errorMessage);
+    }
+
+    // Load cameras and populate dropdown
+    Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+            cameras = devices;
+            const cameraSelect = document.getElementById("camera-select");
+            devices.forEach((device, index) => {
+                const option = document.createElement("option");
+                option.value = device.id;
+                option.text = device.label || `Camera ${index + 1}`;
+                cameraSelect.appendChild(option);
+            });
+
+            // Start scanning with the first camera by default
+            currentCameraId = cameras[0].id;
+            startScanner(currentCameraId);
+
+            // Handle camera switch
+            cameraSelect.addEventListener("change", function() {
+                const selectedCameraId = this.value;
+                qrScanner.stop().then(() => {
+                    startScanner(selectedCameraId);
+                });
+            });
+
+        } else {
+            alert("No camera found on this device.");
+        }
+    }).catch(err => {
+        alert("Camera access error: " + err);
+    });
+
+    function startScanner(cameraId) {
+        qrScanner.start(
+            cameraId,
+            { fps: 10, qrbox: 250 },
+            onScanSuccess,
+            onScanError
+        );
+        currentCameraId = cameraId;
+    }
+});
+</script>
+{% endblock %}

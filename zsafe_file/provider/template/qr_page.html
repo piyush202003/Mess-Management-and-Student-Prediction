@@ -1,0 +1,129 @@
+{% extends 'basep.html' %}
+{% load static %}
+
+    {% block title %}Mess Provider Home{% endblock %}
+    {% block head %}
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    {% endblock %}
+
+    {% block extra_css %}
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+        .navbar {
+            width: 100%;
+        }
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+        .qr-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .qr-code img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        .btn-custom {
+            width: 100%;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+    </style>
+    {% endblock %}
+
+    {% block content %}
+    <div class="main-content">
+        <div class="qr-card">
+            <h2 class="fw-bold text-primary mb-3">Attendance QR Code</h2>
+            <p class="text-muted">
+                Share this QR code with students for attendance tracking.
+            </p>
+
+            {% if profile.mess_qr %}
+                <div class="qr-code">
+                    <img src="{{ profile.mess_qr.url }}" alt="Mess QR Code" class="img-fluid">
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{{ profile.mess_qr.url }}" class="btn btn-primary btn-custom" download>
+                        <i class="bi bi-download me-2"></i> Download QR Code
+                    </a>
+                    <button class="btn btn-success btn-custom" onclick="shareQRCodeImage('{{ profile.mess_qr.url }}')">
+                        <i class="bi bi-share-fill me-2"></i> Share QR Code
+                    </button>
+                </div>
+            {% else %}
+                <div class="alert alert-warning my-4" role="alert">
+                    No QR code found for your profile. Please upload one in your profile settings.
+                </div>
+            {% endif %}
+
+            <a href="{% url 'provider_profile' %}" class="btn btn-link mt-3 text-muted">Go to Profile Settings</a>
+        </div>
+    </div>
+    {% endblock %}
+    
+    {% block scripts %}
+    <script>
+        async function shareQRCodeImage(imgUrl) {
+            try {
+                // Fetch the image as a blob
+                const response = await fetch(imgUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'mess_qr.png', { type: blob.type });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    // Use Web Share API to share the file
+                    await navigator.share({
+                        files: [file],
+                        title: 'Mess Attendance QR Code',
+                        text: 'Scan this QR code for attendance tracking!'
+                    });
+                    console.log('Image shared successfully!');
+                } else {
+                    // Fallback: just download the image
+                    const link = document.createElement('a');
+                    link.href = imgUrl;
+                    link.download = 'mess_qr.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    alert('Your browser does not support sharing files. The QR code has been downloaded instead.');
+                }
+            } catch (err) {
+                console.error('Error sharing QR code image:', err);
+                alert('Failed to share QR code.');
+            }
+        }
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

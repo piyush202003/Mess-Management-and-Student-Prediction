@@ -1,0 +1,39 @@
+{% extends "bases.html" %}
+
+{% block title %}Upcoming Menu{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2">Upcoming Menu</h1>
+            <h5 class="text-muted">For {{ provider.provider_profile.mess_name }}</h5>
+        </div>
+        <!-- <a href="{% url 'provider_details' provider.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Mess Details
+        </a> -->
+    </div>
+
+    {% for menu in upcoming_menus %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">{{ menu.date|date:"l, F j, Y" }} - {{ menu.get_meal_type_display }}</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for item in menu.menu_items.all %}
+                        <li class="list-group-item">{{ item.dish_name }}</li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">Menu for this meal has not been set yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center p-5 border rounded bg-light">
+            <h4>No Upcoming Menus Found</h4>
+            <p>The provider has not scheduled any menus for the upcoming days yet. Please check back later.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

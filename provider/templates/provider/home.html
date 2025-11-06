@@ -1,0 +1,164 @@
+{% extends 'basep.html' %}
+{% block title %}Provider Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <h1 class="mb-0">Provider Dashboard</h1>
+    <a href="{% url 'provider_qr_page' %}" class="btn btn-dark d-flex align-items-center gap-2 shadow-sm">
+        <i class="fas fa-qrcode fa-lg"></i> Show My QR Code
+    </a>
+</div>
+
+<div class="row gy-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-primary border-2">
+            <div class="card-header bg-primary bg-gradient text-white d-flex align-items-center gap-2">
+                <i class="fas fa-sun fa-xl"></i>
+                <h5 class="mb-0">Today's Lunch Status</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title mb-3 fw-semibold">Date: {{ today|date:"F j, Y" }}</h4>
+                {% if lunch_status.is_active %}
+                    <div class="alert alert-success shadow-sm rounded-3">
+                        <h4 class="alert-heading mb-2">Lunch is Active!</h4>
+                        <p class="mb-3">Started at: <strong>{{ lunch_status.started_at|time:"h:i A" }}</strong>. Students can scan the QR code now.</p>
+                        <hr>
+                        <form action="{% url 'stop_mess' 'lunch' %}" method="POST" class="d-grid">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-lg rounded-pill fw-semibold">Stop Lunch Mess</button>
+                        </form>
+                    </div>
+                {% elif lunch_status.stopped_at and not lunch_status.started_at %}
+                    <div class="alert alert-warning shadow-sm rounded-3">
+                        <h4 class="alert-heading">Lunch Mess Not Started</h4>
+                        <p>The lunch mess was not started today. It has been marked as a holiday.</p>
+                    </div>
+                {% elif lunch_status.stopped_at %}
+                    <div class="alert alert-secondary shadow-sm rounded-3">
+                        <p class="mb-0">Lunch mess started at <strong>{{ lunch_status.started_at|time:"h:i A" }}</strong> and stopped at <strong>{{ lunch_status.stopped_at|time:"h:i A" }}</strong>.</p>
+                    </div>
+                {% else %}
+                    {% if can_start_lunch %}
+                        <button class="btn btn-success btn-lg w-100 rounded-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#startLunchModal">
+                            <i class="fas fa-play-circle me-2"></i>Start Lunch Mess
+                        </button>
+                    {% elif is_lunch_time_over %}
+                        <div class="alert alert-warning mb-0 shadow-sm rounded-3">
+                            <p class="mb-0">The time to start lunch has passed. It has been marked as a holiday.</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted fst-italic">You can start the lunch mess 2 hours before the scheduled time.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm border-dark border-2">
+            <div class="card-header bg-dark bg-gradient text-white d-flex align-items-center gap-2">
+                <i class="fas fa-moon fa-xl"></i>
+                <h5 class="mb-0">Today's Dinner Status</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title mb-3 fw-semibold">Date: {{ today|date:"F j, Y" }}</h4>
+                {% if dinner_status.is_active %}
+                    <div class="alert alert-success shadow-sm rounded-3">
+                        <h4 class="alert-heading mb-2">Dinner is Active!</h4>
+                        <p class="mb-3">Started at: <strong>{{ dinner_status.started_at|time:"h:i A" }}</strong>.</p>
+                        <hr>
+                        <form action="{% url 'stop_mess' 'dinner' %}" method="POST" class="d-grid">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-lg rounded-pill fw-semibold">Stop Dinner Mess</button>
+                        </form>
+                    </div>
+                {% elif dinner_status.stopped_at and not dinner_status.started_at %}
+                    <div class="alert alert-warning shadow-sm rounded-3">
+                        <h4 class="alert-heading">Dinner Mess Not Started</h4>
+                        <p>The dinner mess was not started today. It has been marked as a holiday.</p>
+                    </div>
+                {% elif dinner_status.stopped_at %}
+                    <div class="alert alert-secondary shadow-sm rounded-3">
+                        <p class="mb-0">Dinner mess started at <strong>{{ dinner_status.started_at|time:"h:i A" }}</strong> and stopped at <strong>{{ dinner_status.stopped_at|time:"h:i A" }}</strong>.</p>
+                    </div>
+                {% else %}
+                    {% if can_start_dinner %}
+                        <button class="btn btn-success btn-lg w-100 rounded-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#startDinnerModal">
+                            <i class="fas fa-play-circle me-2"></i>Start Dinner Mess
+                        </button>
+                    {% elif is_dinner_time_over %}
+                        <div class="alert alert-warning mb-0 shadow-sm rounded-3">
+                            <p class="mb-0">The time to start dinner has passed. It has been marked as a holiday.</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted fst-italic">You can start the dinner mess 2 hours before the scheduled time.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="startLunchModal" tabindex="-1" aria-labelledby="startLunchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-primary bg-gradient text-white">
+        <h5 class="modal-title" id="startLunchModalLabel">Confirm Today's Lunch Menu</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'start_mess' 'lunch' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p>Select the menu items you are serving for lunch today. This will be shown to students.</p>
+          <div class="mb-3">
+            <label for="lunchMenuItems" class="form-label">Menu Items:</label>
+            <select multiple class="form-select" id="lunchMenuItems" name="menu_items" required size="6" style="min-height: 150px;">
+                {% for item in menu_items %}
+                  <option value="{{ item.id }}">{{ item.dish_name }}</option>
+                {% endfor %}
+            </select>
+            <small class="text-muted">Hold Ctrl (Cmd) to select multiple items.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary rounded-pill fw-semibold">Confirm and Start Lunch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="startDinnerModal" tabindex="-1" aria-labelledby="startDinnerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-dark bg-gradient text-white">
+        <h5 class="modal-title" id="startDinnerModalLabel">Confirm Today's Dinner Menu</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'start_mess' 'dinner' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p>Select the menu items you are serving for dinner today.</p>
+          <div class="mb-3">
+            <label for="dinnerMenuItems" class="form-label">Menu Items:</label>
+            <select multiple class="form-select" id="dinnerMenuItems" name="menu_items" required size="6" style="min-height: 150px;">
+              {% for item in menu_items %}
+                <option value="{{ item.id }}">{{ item.dish_name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted">Hold Ctrl (Cmd) to select multiple items.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary rounded-pill fw-semibold">Confirm and Start Dinner</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

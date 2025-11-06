@@ -1,0 +1,103 @@
+{% extends "bases.html" %}
+
+{% block title %}My Subscriptions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-title {
+        font-weight: 700;
+    }
+    .badge {
+        font-size: 1rem;
+    }
+    .progress {
+        height: 25px;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    .progress-bar {
+        transition: width 1.2s ease-in-out;
+        font-weight: 600;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    /* Adjust image height on small screens to maintain aspect ratio */
+    @media (max-width: 576px) {
+        .card img {
+            height: auto !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4 text-center">My Active Subscriptions</h1>
+
+    {% for sub in active_subscriptions %}
+    <div class="card shadow-sm mb-4">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img src="{{ sub.mess_image.url }}" class="img-fluid rounded-start" alt="{{ sub.mess_name }}" style="height: 100%; object-fit: cover;">
+            </div>
+            <div class="col-md-8 d-flex flex-column">
+                <div class="card-body flex-grow-1">
+                    <h4 class="card-title">{{ sub.mess_name }}</h4>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ sub.plan_name }}</h6>
+                    <p class="card-text">
+                        <i class="bi bi-geo-alt-fill"></i> {{ sub.address }}<br>
+                        <i class="bi bi-telephone-fill"></i> {{ sub.phone_no }}
+                    </p>
+
+                    <div class="d-flex justify-content-around text-center my-3">
+                        <div>
+                            <span class="badge bg-primary fs-6">{{ sub.mess_type }}</span>
+                            <small class="d-block text-muted">Mess Type</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-success fs-6">{{ sub.service_type }}</span>
+                            <small class="d-block text-muted">Service</small>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar: Assuming sub has a single coupon progress -->
+                    <div class="progress" aria-label="Coupon usage progress">
+                        <div class="progress-bar {{ sub.color_class }}" role="progressbar"
+                            style="width: 0%;" data-width="{{ sub.coupon_percentage }}"
+                            aria-valuenow="{{ sub.remaining_coupons }}" aria-valuemin="0"
+                            aria-valuemax="{{ sub.total_coupons }}">
+                            <strong>{{ sub.remaining_coupons }} / {{ sub.total_coupons }} Coupons Left</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer text-muted text-center">
+                    Activated on: {{ sub.activation_date }}
+                </div>
+
+                <div class="p-3">
+                    <a href="{% url 'view_provider_menu' sub.provider_user_id %}" class="btn btn-primary w-100">
+                        <i class="bi bi-calendar-week me-2"></i> View Upcoming Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info text-center" role="alert">
+        You do not have any active subscriptions.
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.querySelectorAll('.progress-bar').forEach(bar => {
+        const width = bar.dataset.width;
+        setTimeout(() => {  // add slight delay for animation
+            bar.style.width = `${width}%`;
+        }, 100);
+    });
+</script>
+{% endblock %}

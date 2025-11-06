@@ -1,0 +1,174 @@
+{% extends 'basep.html' %}
+
+{% block extra_css %}
+<style>
+  h2 {
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.08);
+  }
+  .btn-primary, .btn-secondary {
+    border-radius: 30px;
+    font-weight: 600;
+    padding: 0.55rem 1.8rem;
+    font-size: 1rem;
+  }
+
+  /* Table */
+  table {
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    background: white;
+  }
+  thead th {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 700;
+    vertical-align: middle !important;
+    text-align: center;
+  }
+  tbody td {
+    vertical-align: middle !important;
+  }
+  tbody tr:hover {
+    background-color: #e7f1ff;
+  }
+  .badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+    border-radius: 15px;
+  }
+  .btn-sm {
+    border-radius: 20px;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+  }
+  /* Filter Form */
+  form.row {
+    gap: 1rem;
+  }
+  .form-control, .form-select {
+    border-radius: 10px;
+    box-shadow: inset 0 1px 6px rgb(0 0 0 / 0.12);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 10px rgba(25, 135, 84, 0.4);
+    outline: none;
+  }
+  /* Responsive tweaks */
+  @media (max-width: 767.98px) {
+    h2 {
+      font-size: 1.75rem;
+    }
+    .btn-primary, .btn-secondary {
+      width: 100% !important;
+      font-size: 1.05rem;
+      padding: 0.7rem 0;
+    }
+    form > .col-md-4, form > .col-md-3, form > .col-md-2 {
+      flex: 1 1 100% !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Subscription Requests</h2>
+
+  <div class="card bg-light mb-4 shadow-sm p-4">
+    <form method="GET" action="{% url 'manage_requests' %}" class="row g-3 align-items-center">
+      <div class="col-md-4 col-sm-12">
+        <input
+          type="text"
+          class="form-control"
+          name="student"
+          placeholder="Search by Student Name..."
+          value="{{ request.GET.student }}"
+          aria-label="Search by Student Name"
+        >
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <select class="form-select" name="plan" aria-label="Filter by Plan">
+          <option value="">Filter by Plan...</option>
+          {% for plan in available_plans %}
+          <option value="{{ plan.id }}" {% if request.GET.plan == plan.id|stringformat:"s" %}selected{% endif %}>
+            {{ plan.plan_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <select class="form-select" name="status" aria-label="Filter by Status">
+          <option value="">Filter by Status...</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 col-sm-12 d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="submit" class="btn btn-primary me-md-2">Filter</button>
+        <a href="{% url 'manage_requests' %}" class="btn btn-secondary">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive rounded shadow-sm">
+    <table class="table table-bordered table-hover align-middle mb-0 text-center">
+      <thead>
+        <tr>
+          <th scope="col">Student</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Status</th>
+          <th scope="col">Requested At</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ req.student.get_full_name|default:req.student.username }}</td>
+          <td>{{ req.plan.plan_name }}</td>
+          <td>
+            {% if req.status == "PENDING" %}
+              <span class="badge bg-warning text-dark">{{ req.get_status_display }}</span>
+            {% elif req.status == "ACCEPTED" %}
+              <span class="badge bg-success">{{ req.get_status_display }}</span>
+            {% elif req.status == "REJECTED" %}
+              <span class="badge bg-danger">{{ req.get_status_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ req.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>{{ req.created_at|date:"M d, Y, h:i A" }}</td>
+          <td>
+            {% if req.status == "PENDING" %}
+              <a href="{% url 'update_request_status' req.id 'accept' %}" class="btn btn-sm btn-success me-1">Accept</a>
+              <a href="{% url 'update_request_status' req.id 'reject' %}" class="btn btn-sm btn-danger">Reject</a>
+            {% else %}
+              <em>No action available</em>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-muted py-4 font-italic">
+            No subscription requests found matching your criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

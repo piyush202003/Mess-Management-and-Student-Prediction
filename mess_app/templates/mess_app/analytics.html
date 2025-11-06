@@ -1,0 +1,424 @@
+{% extends "basep.html" %}
+{% load static %}
+{% load mess_app_filters %}
+
+{% block title %}Analytics Dashboard - {{ provider.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        margin-bottom: 20px;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .performance-table {
+        font-size: 0.9rem;
+    }
+    .accuracy-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+    .gradient-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .dish-performance-item {
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        transition: all 0.2s;
+    }
+    .dish-performance-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div>
+                    <h2><i class="fas fa-chart-line"></i> Performance Analytics</h2>
+                    <p class="text-muted mb-0">Track your model's performance and insights</p>
+                </div>
+                <div>
+                    <a href="{% url 'predict_dish' provider.id %}" class="btn btn-primary">
+                        <i class="fas fa-brain"></i> Predict
+                    </a>
+                    <a href="{% url 'recommend_dish' provider.id %}" class="btn btn-success">
+                        <i class="fas fa-magic"></i> Recommend
+                    </a>
+                    <a href="{% url 'provider_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not has_model %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No Model Trained</strong>
+        <p class="mb-0">Train your model to see analytics and insights.</p>
+        <a href="{% url 'retrain_model' provider.id %}" class="btn btn-sm btn-warning mt-2">
+            <i class="fas fa-sync-alt"></i> Train Model Now
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 opacity-75">Avg Attendance</h6>
+                            <div class="stat-value">{{ model_stats.avg_attendance|floatformat:0 }}</div>
+                            <small class="opacity-75">students per meal</small>
+                        </div>
+                        <i class="fas fa-users stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 opacity-75">Training Data</h6>
+                            <div class="stat-value">{{ model_stats.total_samples }}</div>
+                            <small class="opacity-75">records</small>
+                        </div>
+                        <i class="fas fa-database stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 opacity-75">Prediction Accuracy</h6>
+                            <div class="stat-value">
+                                {% if avg_accuracy %}{{ avg_accuracy }}%{% else %}N/A{% endif %}
+                            </div>
+                            <small class="opacity-75">average accuracy</small>
+                        </div>
+                        <i class="fas fa-bullseye stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card stat-card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Model Score</h6>
+                            <div class="stat-value">
+                                {% if model_stats.model_score %}{{ model_stats.model_score|floatformat:2 }}{% else %}N/A{% endif %}
+                            </div>
+                            <small>R² score</small>
+                        </div>
+                        <i class="fas fa-award stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dish Performance -->
+    {% if model_stats.dish_performance %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card stat-card">
+                <div class="card-header gradient-header text-white">
+                    <h5 class="mb-0"><i class="fas fa-utensils"></i> Dish Performance Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-arrow-up"></i> Best Performing Dishes
+                            </h6>
+                            {% if model_stats.best_dishes %}
+                            <div>
+                                {% for dish in model_stats.best_dishes %}
+                                <div class="dish-performance-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ dish }}</strong>
+                                            <small class="d-block text-muted">
+                                                {{ model_stats.dish_performance|get_item:dish|get_item:'count' }} times served
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-success" style="font-size: 1rem;">
+                                            {{ model_stats.dish_performance|get_item:dish|get_item:'avg_attendance'|floatformat:1 }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Not enough data yet</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">
+                                <i class="fas fa-arrow-down"></i> Needs Improvement
+                            </h6>
+                            {% if model_stats.worst_dishes %}
+                            <div>
+                                {% for dish in model_stats.worst_dishes %}
+                                <div class="dish-performance-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ dish }}</strong>
+                                            <small class="d-block text-muted">
+                                                {{ model_stats.dish_performance|get_item:dish|get_item:'count' }} times served
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-warning text-dark" style="font-size: 1rem;">
+                                            {{ model_stats.dish_performance|get_item:dish|get_item:'avg_attendance'|floatformat:1 }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">Not enough data yet</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Day Patterns -->
+    {% if model_stats.day_patterns %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-calendar-week"></i> Best Attendance Days</h6>
+                </div>
+                <div class="card-body">
+                    {% if model_stats.best_days %}
+                    <div>
+                        {% for day in model_stats.best_days %}
+                        <div class="dish-performance-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ day }}</strong>
+                                <span class="badge bg-info">
+                                    {{ model_stats.day_patterns|get_item:day|get_item:'avg_attendance'|floatformat:1 }} avg
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Not enough data yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="fas fa-calendar-times"></i> Low Attendance Days</h6>
+                </div>
+                <div class="card-body">
+                    {% if model_stats.worst_days %}
+                    <div>
+                        {% for day in model_stats.worst_days %}
+                        <div class="dish-performance-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ day }}</strong>
+                                <span class="badge bg-warning text-dark">
+                                    {{ model_stats.day_patterns|get_item:day|get_item:'avg_attendance'|floatformat:1 }} avg
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Not enough data yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Meal Type Performance -->
+    {% if model_stats.meal_patterns %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card stat-card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-clock"></i> Meal Time Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for meal, stats in model_stats.meal_patterns.items %}
+                        <div class="col-md-6">
+                            <div class="dish-performance-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ meal }}</strong>
+                                        <small class="d-block text-muted">
+                                            {{ stats.count }} meals tracked
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-primary" style="font-size: 1rem;">
+                                        {{ stats.avg_attendance|floatformat:1 }} avg
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Predictions -->
+    {% if recent_predictions %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card stat-card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Predictions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover performance-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Meal</th>
+                                    <th>Dish</th>
+                                    <th>Type</th>
+                                    <th>Predicted</th>
+                                    <th>Actual</th>
+                                    <th>Accuracy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in recent_predictions %}
+                                <tr>
+                                    <td>{{ pred.date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ pred.meal_type }}</span>
+                                    </td>
+                                    <td>{{ pred.dish_name }}</td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ pred.dish_type|upper }}
+                                        </span>
+                                    </td>
+                                    <td><strong>{{ pred.predicted_attendance }}</strong></td>
+                                    <td>
+                                        {% if pred.actual_attendance %}
+                                        <strong>{{ pred.actual_attendance }}</strong>
+                                        {% else %}
+                                        <span class="text-muted">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if pred.accuracy_percentage %}
+                                        <span class="accuracy-badge" >
+                                            {{ pred.accuracy_percentage|floatformat:1 }}%
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Training History -->
+    {% if performance_history %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card stat-card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-sync-alt"></i> Model Training History</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm performance-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Training Date</th>
+                                    <th>Samples Used</th>
+                                    <th>Model Score (R²)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for perf in performance_history %}
+                                <tr>
+                                    <td>{{ perf.training_date|date:"M d, Y H:i" }}</td>
+                                    <td>{{ perf.training_samples }}</td>
+                                    <td>
+                                        {% if perf.model_score %}
+                                        {{ perf.model_score|floatformat:3 }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}

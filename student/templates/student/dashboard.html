@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Dashboard</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; margin: 2em; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 1em; }
+        .card h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 0.5em; }
+        .menu-list { list-style-type: none; padding-left: 0; }
+        .menu-list li { background-color: #f9f9f9; padding: 0.5em; border-radius: 4px; margin-bottom: 0.5em; }
+        .no-subscription { text-align: center; padding: 2em; background-color: #fffbe6; border: 1px solid #ffe58f; }
+        .upcoming-menu-item { margin-bottom: 1.5em; }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome, {{ request.user.username }}!</h1>
+    
+    {% if subscription %}
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>Your Subscription</h3>
+                <p><strong>Provider:</strong> {{ subscription.mess_plan.provider.provider_profile.mess_name }}</p>
+                <p><strong>Plan:</strong> {{ subscription.mess_plan.plan_name }}</p>
+                <p><strong>Remaining Coupons:</strong> {{ subscription.remaining_coupons }} / {{ subscription.total_coupons }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Today's Menu ({{ today|date:"l, F j" }})</h3>
+                
+                <h4>Lunch</h4>
+                {% if todays_lunch %}
+                    <ul class="menu-list">
+                        {% for item in todays_lunch.menu_items.all %}
+                            <li>{{ item.dish_name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p><em>Menu not set for lunch yet.</em></p>
+                {% endif %}
+
+                <h4>Dinner</h4>
+                {% if todays_dinner %}
+                    <ul class="menu-list">
+                        {% for item in todays_dinner.menu_items.all %}
+                            <li>{{ item.dish_name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p><em>Menu not set for dinner yet.</em></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 2em;">
+            <h3>Upcoming Menus (Next 7 Days)</h3>
+            {% for menu in upcoming_menus %}
+                <div class="upcoming-menu-item">
+                    <strong>{{ menu.date|date:"l, F j" }} - {{ menu.get_meal_type_display }}</strong>
+                    <ul class="menu-list">
+                        {% for item in menu.menu_items.all %}
+                            <li>{{ item.dish_name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% empty %}
+                <p>No upcoming menus have been set by your provider yet.</p>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="no-subscription">
+            <h2>No Active Subscription Found</h2>
+            <p>Please subscribe to a mess plan to view menus and manage your meals.</p>
+        </div>
+    {% endif %}
+
+</body>
+</html>

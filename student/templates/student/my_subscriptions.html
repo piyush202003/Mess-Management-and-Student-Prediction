@@ -1,0 +1,80 @@
+{% extends 'bases.html' %}
+{% block title %}My Subscriptions{% endblock %}
+{% block extra_css %}
+<style>
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Responsive table header font size */
+    @media (max-width: 576px) {
+        thead th {
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        tbody td {
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+    }
+
+    /* Add some spacing below the header */
+    h3 {
+        letter-spacing: 0.02rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h3 class="fw-bold mb-4 text-center text-primary">My Subscription Requests</h3>
+
+    {% if subscriptions %}
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover table-bordered align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Mess Name</th>
+                    <th scope="col">Plan Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Requested At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subscriptions %}
+                <tr class="clickable-row">
+                    <td>
+                        <a href="{% url 'provider_details' provider_pk=sub.provider.provider_profile.id %}" class="text-decoration-none text-dark fw-semibold">
+                            {{ sub.provider.provider_profile.mess_name }}
+                        </a>
+                    </td>
+                    <td>{{ sub.plan.plan_name }}</td>
+                    <td>
+                        {% if sub.status == 'PENDING' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif sub.status == 'ACCEPTED' %}
+                        <span class="badge bg-success">Accepted</span>
+                        {% elif sub.status == 'REJECTED' %}
+                        <span class="badge bg-danger">Rejected</span>
+                        {% elif sub.status == 'EXPIRED' %}
+                        <span class="badge bg-secondary">Expired</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ sub.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center mt-4">
+        You don’t have any subscription history yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

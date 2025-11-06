@@ -1,0 +1,192 @@
+{% extends 'basep.html' %}
+
+{% block extra_css %}
+<style>
+  /* Container max width */
+  /* .container {
+    max-width: 1100px;
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+  } */
+
+  /* Page heading */
+  h1 {
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  /* Card styling */
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.08);
+  }
+  
+  /* Search form inputs styling */
+  .form-control, .form-select {
+    border-radius: 10px;
+    box-shadow: inset 0 1px 6px rgba(0,0,0,0.12);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 10px rgba(13,110,253,0.3);
+    outline: none;
+  }
+  
+  /* Filter buttons */
+  .btn-primary, .btn-secondary {
+    border-radius: 30px;
+    font-weight: 600;
+    /* padding: 0.55rem 1.8rem; */
+    /* font-size: 1rem; */
+  }
+  
+  /* Table styling */
+  .table {
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    background: white;
+  }
+  thead th {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 700;
+    vertical-align: middle !important;
+    text-align: center;
+  }
+  tbody td {
+    vertical-align: middle !important;
+  }
+  tbody tr {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  tbody tr:hover {
+    background-color: #e7f1ff;
+  }
+
+  /* Badge styling */
+  .badge {
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.4em 0.85em;
+    border-radius: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 767.98px) {
+    h1 {
+      font-size: 1.75rem;
+    }
+    form > .col-md-4,
+    form > .col-md-3,
+    form > .col-md-2 {
+      flex: 1 1 100% !important;
+    }
+    .btn-primary, .btn-secondary {
+      width: 100% !important;
+      font-size: 1.05rem;
+      padding: 0.7rem 0;
+      margin-bottom: 0.5rem;
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Manage Active Students</h1>
+
+  <div class="card bg-light mb-4 shadow-sm p-4">
+    <form method="GET" action="{% url 'manage_students' %}" class="row g-3 align-items-center">
+      <div class="col-md-4 col-sm-12">
+        <label for="name_phone" class="visually-hidden">Name or Phone</label>
+        <input
+          type="text"
+          class="form-control"
+          id="name_phone"
+          name="name_phone"
+          placeholder="Search by Name or Phone..."
+          value="{{ request.GET.name_phone }}"
+          aria-label="Search by Name or Phone"
+        />
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <label for="plan" class="visually-hidden">Plan</label>
+        <select class="form-select" id="plan" name="plan" aria-label="Filter by Plan">
+          <option value="">Filter by Plan...</option>
+          {% for plan in available_plans %}
+          <option value="{{ plan.id }}" {% if request.GET.plan == plan.id|stringformat:"s" %}selected{% endif %}>
+            {{ plan.plan_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <label for="activation_date" class="visually-hidden">Activation Date</label>
+        <input
+          type="date"
+          class="form-control"
+          id="activation_date"
+          name="activation_date"
+          value="{{ request.GET.activation_date }}"
+          aria-label="Filter by Activation Date"
+        />
+      </div>
+      <div class="col-md-2 col-sm-12 d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="submit" class="btn btn-primary me-md-2">Search</button>
+        <a href="{% url 'manage_students' %}" class="btn btn-secondary">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card shadow-sm" style="margin-bottom: 1rem;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0 text-center">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Phone Number</th>
+              <th>Subscription Plan</th>
+              <th>Coupons Left</th>
+              <th>Activation Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in active_subscriptions %}
+            <tr onclick="window.location='/provider/students/{{ sub.student.id }}';" role="button" tabindex="0" style="user-select: none;">
+              <td class="d-flex align-items-center justify-content-center gap-2">
+                {% if sub.student.student_profile.profile_photo %}
+                  <img src="{{ sub.student.student_profile.profile_photo.url }}" alt="Photo" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                {% endif %}
+                {{ sub.student.get_full_name|default:sub.student.username }}
+              </td>
+              <td>{{ sub.student.phone|default:"N/A" }}</td>
+              <td>{{ sub.mess_plan.plan_name }}</td>
+              <td>
+                <span class="badge bg-primary rounded-pill fs-6">
+                  {{ sub.remaining_coupons }} / {{ sub.total_coupons }}
+                </span>
+              </td>
+              <td>{{ sub.activation_date|date:"F d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted fst-italic">
+                No students found matching your search criteria.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
