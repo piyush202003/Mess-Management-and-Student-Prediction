@@ -19,6 +19,8 @@ This project is a Django-based web application that predicts student attendance 
 
 ### Activate virtual environment and run server
 
+Install vertual env and install updated python, Django, torch, matplotlib, scikit-learn and other libraries
+
 On Windows PowerShell
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 cd ../env/Scripts
@@ -59,11 +61,19 @@ Once ngrok is running, you can access your application on the internet using the
 
 ---
 
-## Contact
-
-For issues or questions, please contact the project maintainer.
-
----
-
 Feel free to customize the auth token and URL placeholders for your environment.
+
+## Logins
+- There are two logins student and mess provider
+- For creating new account use valid email Id for OTP validation
+
+## Mess Provider
+- Can acess all subscribed students and see there attendance 
+- From home page provider can start mess and end it for lunch and dinner mess can be started befor 2 hr of setted time and can end before or will end automatically 2 hr later of end time
+
+## Mess Dashboard
+- Here all graphs and analysis part all for more accuret prediction provider must ReTrain the model after some time
+
+## All requirements are given in PPT
+
 
